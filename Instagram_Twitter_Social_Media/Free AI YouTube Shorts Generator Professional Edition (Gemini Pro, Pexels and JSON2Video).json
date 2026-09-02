@@ -1,0 +1,481 @@
+{
+  "name": "Free AI YouTube Shorts Generator Professional Edition (Gemini Pro, Pexels and JSON2Video)",
+  "tags": [],
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## ⚙️ SETUP — sirf 3 FREE keys, koi credit card NAHI\n\n1. **GEMINI_API_KEY** → free: [aistudio.google.com/apikey](https://aistudio.google.com/apikey) (Gemini 2.5 Pro free tier pe chalta hai)\n   - `429 rate limit` aaye to `GEMINI_MODEL` ko `gemini-2.5-flash` kar do\n2. **PEXELS_API_KEY** → free: [pexels.com/api](https://www.pexels.com/api/)\n3. **JSON2VIDEO_API_KEY** → free: [json2video.com/get-api-key](https://json2video.com/get-api-key/) (render + Hindi voice + captions — sab isi ke free plan mein)\n4. Last node pe apni **YouTube OAuth2** credential lagao\n\n🎙️ **Voice** (Config mein badlo): `hi-IN-MadhurNeural` (male, default) • `hi-IN-SwaraNeural` (female) • `hi-IN-KunalNeural` (male) • English ke liye `en-US-EmmaMultilingualNeural` + `LANGUAGE` = `English`\n\n💰 **Cost: ₹0 per video** — bas niche wali limits dhyan mein rakhna.",
+        "width": 480,
+        "height": 420,
+        "color": 4
+      },
+      "id": "a7b8c9d0-0001-4e5f-8a9b-2b3c4d5e6f70",
+      "name": "Sticky Note — Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-360, -360]
+    },
+    {
+      "parameters": {
+        "content": "## 🎬 Professional Edition — kya milta hai (FREE mein)\n\n**TOPIC → ready-to-publish Short (2-4 min):**\n\n1. **Gemini 2.5 Pro** professional script plan banata hai — SEO title, description (#Shorts hashtags), tags + 4 scenes (golden hook + Hindi voiceover + footage keyword)\n2. **Pexels** har scene ke liye vertical cinematic stock footage\n3. **JSON2Video** professional render: footage + **Hindi neural voiceover** + **auto-synced boxed captions** (karaoke style) + **golden hook title** + **fade transitions** + **branded FOLLOW outro** — 1080x1920, high quality\n4. Auto-poll → MP4 download → **YouTube private upload**\n\n### ⚠️ Free plan limits\n- JSON2Video: **600 sec/month** (≈ 10-12 Shorts) + chhota watermark\n- Gemini free tier: daily limits (manual runs ke liye kaafi)\n- Pexels: 200 requests/hour (bahut zyada hai)\n- Video **private** upload hoti hai — review karke public karo\n\n💡 Style badalna ho (caption color, font size) to `Build Movie JSON` node edit karo.",
+        "width": 480,
+        "height": 480,
+        "color": 6
+      },
+      "id": "a7b8c9d0-0002-4e5f-8a9b-2b3c4d5e6f70",
+      "name": "Sticky Note — Flow",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [140, -400]
+    },
+    {
+      "parameters": {},
+      "id": "a7b8c9d0-1001-4e5f-8a9b-2b3c4d5e6f70",
+      "name": "Start Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [100, 340]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "q1",
+              "name": "GEMINI_API_KEY",
+              "value": "YOUR_GEMINI_API_KEY",
+              "type": "string"
+            },
+            {
+              "id": "q2",
+              "name": "GEMINI_MODEL",
+              "value": "gemini-2.5-pro",
+              "type": "string"
+            },
+            {
+              "id": "q3",
+              "name": "PEXELS_API_KEY",
+              "value": "YOUR_PEXELS_API_KEY",
+              "type": "string"
+            },
+            {
+              "id": "q4",
+              "name": "JSON2VIDEO_API_KEY",
+              "value": "YOUR_JSON2VIDEO_API_KEY",
+              "type": "string"
+            },
+            {
+              "id": "q5",
+              "name": "VOICE",
+              "value": "hi-IN-MadhurNeural",
+              "type": "string"
+            },
+            {
+              "id": "q6",
+              "name": "LANGUAGE",
+              "value": "Hindi",
+              "type": "string"
+            },
+            {
+              "id": "q7",
+              "name": "CHANNEL_TAG",
+              "value": "@YourChannel",
+              "type": "string"
+            },
+            {
+              "id": "q8",
+              "name": "TOPIC",
+              "value": "Top 3 Unbelievable Facts About Ancient India",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a7b8c9d0-1002-4e5f-8a9b-2b3c4d5e6f70",
+      "name": "1. Config and API Keys",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [300, 340]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $json.GEMINI_MODEL }}:generateContent",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $json.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: 'You are a professional YouTube Shorts producer and scriptwriter for Indian audiences. Topic: ' + $json.TOPIC + '. Voiceover language: ' + $json.LANGUAGE + '. Return ONLY a valid JSON object with exactly these keys: \"title\" (catchy SEO title under 90 chars), \"description\" (2 short lines + exactly 5 hashtags including #Shorts), \"tags\" (comma separated, 10-12 SEO tags), \"scenes\" (EXACTLY 4 items, each an object with: \"hook\" = 3-6 word ALL CAPS punchy on-screen caption, \"voiceover\" = 1-2 engaging spoken sentences of 15-20 words in the voiceover language (if Hindi, write in Devanagari script), \"pexels_query\" = 2-3 simple English words for searching cinematic stock footage, e.g. \"indian temple aerial\").' }] }], generationConfig: { responseMimeType: 'application/json' } }) }}",
+        "options": {}
+      },
+      "id": "a7b8c9d0-1003-4e5f-8a9b-2b3c4d5e6f70",
+      "name": "2. Gemini Pro (Script and Plan)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [520, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gemini ka JSON parse karke har scene alag item banao\nconst raw = $input.first().json.candidates[0].content.parts[0].text;\nconst cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();\nconst parsed = JSON.parse(cleaned);\n\nif (!Array.isArray(parsed.scenes) || parsed.scenes.length === 0) {\n  throw new Error('Gemini ne scenes nahi diye — workflow dobara run karo');\n}\n\nconst meta = {\n  title: parsed.title,\n  description: parsed.description,\n  tags: parsed.tags,\n};\n\nreturn parsed.scenes.map((s, i) => ({\n  json: {\n    scene_index: i + 1,\n    hook: s.hook,\n    voiceover: s.voiceover,\n    pexels_query: s.pexels_query,\n    meta,\n  },\n}));"
+      },
+      "id": "a7b8c9d0-1004-4e5f-8a9b-2b3c4d5e6f70",
+      "name": "Split Scenes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [740, 340]
+    },
+    {
+      "parameters": {
+        "url": "https://api.pexels.com/videos/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.pexels_query }}"
+            },
+            {
+              "name": "orientation",
+              "value": "portrait"
+            },
+            {
+              "name": "per_page",
+              "value": "5"
+            },
+            {
+              "name": "min_duration",
+              "value": "5"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $('1. Config and API Keys').first().json.PEXELS_API_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a7b8c9d0-1005-4e5f-8a9b-2b3c4d5e6f70",
+      "name": "3. Pexels (Free Stock Footage)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Professional movie JSON: footage + free Hindi voice + boxed captions + golden hooks + branded outro\nconst sceneItems = $('Split Scenes').all();\nconst pexelsItems = $('3. Pexels (Free Stock Footage)').all();\nconst cfg = $('1. Config and API Keys').first().json;\nconst voice = cfg.VOICE || 'hi-IN-MadhurNeural';\nconst subLang = (cfg.LANGUAGE || 'Hindi').toLowerCase().includes('eng') ? 'en' : 'hi';\n\n// Pexels response me sabse accha portrait file chuno\nfunction pickFile(videos) {\n  if (!Array.isArray(videos) || videos.length === 0) return null;\n  for (const v of videos) {\n    const files = (v.video_files || [])\n      .filter((f) => f.link)\n      .sort((a, b) => (b.height || 0) - (a.height || 0));\n    const portrait = files.find((f) => f.height > f.width && f.height >= 1280);\n    if (portrait) return portrait.link;\n  }\n  const first = videos[0].video_files && videos[0].video_files[0];\n  return first ? first.link : null;\n}\n\nconst scenes = sceneItems.map((item, i) => {\n  const s = item.json;\n  const link = pickFile(pexelsItems[i] ? pexelsItems[i].json.videos : null);\n\n  const elements = [];\n  // Background footage (mute — voiceover clean rahe)\n  if (link) elements.push({ type: 'video', src: link, volume: 0 });\n  // Free neural voiceover — scene duration voice se auto-fit hoti hai\n  elements.push({ type: 'voice', text: s.voiceover, voice });\n  // Auto-synced boxed captions (voice ke saath, professional karaoke look)\n  elements.push({\n    type: 'subtitles',\n    language: subLang,\n    settings: {\n      style: 'boxed-word',\n      'font-family': 'Inter',\n      'font-size': 64,\n      'word-color': '#FFFFFF',\n      'line-color': '#FFFFFF',\n      'outline-color': '#000000',\n      'box-color': '#000000',\n      position: 'bottom-center',\n    },\n  });\n  // Golden hook title (upar)\n  elements.push({ type: 'text', text: s.hook, position: 'top-center', 'font-size': 60, color: '#FFD700' });\n\n  const scene = { comment: 'Scene ' + (i + 1), elements };\n  if (i > 0) scene.transition = { style: 'fade', duration: 0.5 };\n  return scene;\n});\n\n// Branded outro — FOLLOW CTA\nconst outroClip = pickFile(pexelsItems[0] ? pexelsItems[0].json.videos : null);\nconst outroElements = [];\nif (outroClip) outroElements.push({ type: 'video', src: outroClip, volume: 0 });\noutroElements.push({ type: 'text', text: 'FOLLOW ' + (cfg.CHANNEL_TAG || ''), position: 'center', 'font-size': 84, color: '#FFFFFF' });\noutroElements.push({ type: 'text', text: 'LIKE • SHARE • SUBSCRIBE', position: 'bottom-center', 'font-size': 44, color: '#FFD700' });\nscenes.push({ comment: 'Outro', duration: 3, elements: outroElements, transition: { style: 'fade', duration: 0.5 } });\n\nconst movie = {\n  comment: 'Free Professional AI Short — Gemini Pro + Pexels + JSON2Video',\n  resolution: 'instagram-story',\n  quality: 'high',\n  scenes,\n};\n\nreturn [{ json: { movie, meta: sceneItems[0].json.meta } }];"
+      },
+      "id": "a7b8c9d0-1006-4e5f-8a9b-2b3c4d5e6f70",
+      "name": "Build Movie JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1180, 340]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.json2video.com/v2/movies",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $('1. Config and API Keys').first().json.JSON2VIDEO_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.movie) }}",
+        "options": {}
+      },
+      "id": "a7b8c9d0-1007-4e5f-8a9b-2b3c4d5e6f70",
+      "name": "4. JSON2Video (Render)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1400, 340]
+    },
+    {
+      "parameters": {
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "id": "a7b8c9d0-1008-4e5f-8a9b-2b3c4d5e6f70",
+      "name": "Wait 30s (Render)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1620, 340]
+    },
+    {
+      "parameters": {
+        "url": "https://api.json2video.com/v2/movies",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "project",
+              "value": "={{ $('4. JSON2Video (Render)').first().json.project }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $('1. Config and API Keys').first().json.JSON2VIDEO_API_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a7b8c9d0-1009-4e5f-8a9b-2b3c4d5e6f70",
+      "name": "Check Render Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1840, 340]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "or",
+          "conditions": [
+            {
+              "id": "cond-done",
+              "leftValue": "={{ $json.movie.status }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "cond-error",
+              "leftValue": "={{ $json.movie.status }}",
+              "rightValue": "error",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a7b8c9d0-1010-4e5f-8a9b-2b3c4d5e6f70",
+      "name": "Render Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2060, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Render result validate karo — error ho to clear message do\nconst status = $input.first().json.movie || {};\nif (status.status === 'error') {\n  throw new Error('Render fail hua: ' + (status.message || 'unknown JSON2Video error'));\n}\nif (!status.url) {\n  throw new Error('Render URL nahi mila — JSON2Video quota/plan check karo');\n}\nreturn [{ json: { url: status.url } }];"
+      },
+      "id": "a7b8c9d0-1011-4e5f-8a9b-2b3c4d5e6f70",
+      "name": "Validate Render",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2280, 340]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "a7b8c9d0-1012-4e5f-8a9b-2b3c4d5e6f70",
+      "name": "5. Download Final Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2500, 340]
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $('Build Movie JSON').first().json.meta.title }}",
+        "categoryId": "27",
+        "binaryProperty": "data",
+        "options": {
+          "description": "={{ $('Build Movie JSON').first().json.meta.description }}",
+          "privacyStatus": "private",
+          "tags": "={{ $('Build Movie JSON').first().json.meta.tags }}"
+        }
+      },
+      "id": "a7b8c9d0-1013-4e5f-8a9b-2b3c4d5e6f70",
+      "name": "6. Upload to YouTube",
+      "type": "n8n-nodes-base.youtube",
+      "typeVersion": 1,
+      "position": [2720, 340]
+    }
+  ],
+  "connections": {
+    "Start Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "1. Config and API Keys",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Config and API Keys": {
+      "main": [
+        [
+          {
+            "node": "2. Gemini Pro (Script and Plan)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Gemini Pro (Script and Plan)": {
+      "main": [
+        [
+          {
+            "node": "Split Scenes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Scenes": {
+      "main": [
+        [
+          {
+            "node": "3. Pexels (Free Stock Footage)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Pexels (Free Stock Footage)": {
+      "main": [
+        [
+          {
+            "node": "Build Movie JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Movie JSON": {
+      "main": [
+        [
+          {
+            "node": "4. JSON2Video (Render)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. JSON2Video (Render)": {
+      "main": [
+        [
+          {
+            "node": "Wait 30s (Render)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 30s (Render)": {
+      "main": [
+        [
+          {
+            "node": "Check Render Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Render Status": {
+      "main": [
+        [
+          {
+            "node": "Render Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render Done?": {
+      "main": [
+        [
+          {
+            "node": "Validate Render",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 30s (Render)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Render": {
+      "main": [
+        [
+          {
+            "node": "5. Download Final Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Download Final Video": {
+      "main": [
+        [
+          {
+            "node": "6. Upload to YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}
