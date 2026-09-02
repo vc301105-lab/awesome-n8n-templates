@@ -1,0 +1,1038 @@
+{
+  "name": "AI YouTube Shorts Studio Pro v2 (Gemini Omni 1.1 Flash and Veo)",
+  "tags": [],
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## ⚙️ SETUP — 3 free keys + 1 paid video model\n\n**FREE keys:**\n1. `GEMINI_API_KEY` → [aistudio.google.com/apikey](https://aistudio.google.com/apikey) (script + Omni/Veo dono isi key se)\n2. `PEXELS_API_KEY` → [pexels.com/api](https://www.pexels.com/api/) (fallback footage — free)\n3. `JSON2VIDEO_API_KEY` → [json2video.com/get-api-key](https://json2video.com/get-api-key/) (render + Hindi voice + captions — free)\n4. Last node pe **YouTube OAuth2** credential\n\n## 🎥 VIDEO ENGINE — Config mein `VIDEO_PROVIDER` se switch karo\n| Provider | Model | Cost / video (4 clips x 8s) |\n|---|---|---|\n| `omni` (DEFAULT) | `gemini-omni-1.1-flash` — Google ka naya GA video model (Interactions API) | ~$3.20 (₹270) |\n| `veo` | `veo-3.1-fast-generate-preview` | ~$3.20 (₹270) |\n| `veo` + lite | `veo-3.1-lite-generate-preview` | ~$1.60 (₹135) |\n\n⚠️ Video generation ke liye **billing enable** hona chahiye (AI Studio → Billing → Pay as you go).\n⚠️ Purana `gemini-omni-flash-preview` **30 Sept 2026 se deprecated** — isliye default `gemini-omni-1.1-flash` hai.\n\n🎙️ Voice: `hi-IN-MadhurNeural` (male) • `hi-IN-SwaraNeural` (female) • English: `en-US-EmmaMultilingualNeural` + `LANGUAGE`=`English`\n\n❓ **Google Flow?** Flow ka koi API nahi hai — wo manual web tool hai. Tumhari Google AI Pro subscription Flow mein Veo/Omni credits deti hai — extra clips manually Flow pe banao, automation ke liye ye template use karo.",
+        "width": 520,
+        "height": 560,
+        "color": 4
+      },
+      "id": "d8e9f0a1-0001-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Sticky Note — Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-400, -420]
+    },
+    {
+      "parameters": {
+        "content": "## 🎬 Studio Pro v2 — dual video engine + free everything else\n\n**TOPIC → publish-ready Short (~4-7 min):**\n\n1. **Gemini 2.5 Pro** (free): SEO title, #Shorts description, tags + 4 scenes (golden hook, Hindi voiceover, cinematic video prompt, Pexels fallback keyword)\n2. **Video engine** (paid, ~₹270/video):\n   - **Omni 1.1 Flash** (default): Interactions API se 9:16 clips\n   - ya **Veo 3.1**: predictLongRunning se 9:16 clips\n   - `VIDEO_PROVIDER` = `omni` ya `veo` — Config mein ek field\n3. **Smart fallback**: jo scene AI se na bane, wahan **Pexels stock** — video kabhi nahi rukti\n4. **JSON2Video** (free): footage + **Hindi neural voiceover** + **auto-synced boxed captions** + golden hooks + fade transitions + **FOLLOW outro** (1080x1920)\n5. Auto-poll → download → **YouTube private upload**\n\n### ⚠️ Notes\n- AI clips 2-6 min lete hain (workflow khud poll karta hai — dono engines ke liye alag proven loops)\n- Video **private** upload hoti hai — review karke public karo\n- 401/429 = billing enable nahi hai\n- `Clips Ready` node ke output mein `ai_ok` / `ai_fallback` count dikhta hai",
+        "width": 520,
+        "height": 520,
+        "color": 6
+      },
+      "id": "d8e9f0a1-0002-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Sticky Note — Flow",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [180, -440]
+    },
+    {
+      "parameters": {},
+      "id": "d8e9f0a1-1001-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Start Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [100, 340]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "v1",
+              "name": "GEMINI_API_KEY",
+              "value": "YOUR_GEMINI_API_KEY",
+              "type": "string"
+            },
+            {
+              "id": "v2",
+              "name": "GEMINI_MODEL",
+              "value": "gemini-2.5-pro",
+              "type": "string"
+            },
+            {
+              "id": "v3",
+              "name": "VIDEO_PROVIDER",
+              "value": "omni",
+              "type": "string"
+            },
+            {
+              "id": "v4",
+              "name": "OMNI_MODEL",
+              "value": "gemini-omni-1.1-flash",
+              "type": "string"
+            },
+            {
+              "id": "v5",
+              "name": "VEO_MODEL",
+              "value": "veo-3.1-fast-generate-preview",
+              "type": "string"
+            },
+            {
+              "id": "v6",
+              "name": "PEXELS_API_KEY",
+              "value": "YOUR_PEXELS_API_KEY",
+              "type": "string"
+            },
+            {
+              "id": "v7",
+              "name": "JSON2VIDEO_API_KEY",
+              "value": "YOUR_JSON2VIDEO_API_KEY",
+              "type": "string"
+            },
+            {
+              "id": "v8",
+              "name": "VOICE",
+              "value": "hi-IN-MadhurNeural",
+              "type": "string"
+            },
+            {
+              "id": "v9",
+              "name": "LANGUAGE",
+              "value": "Hindi",
+              "type": "string"
+            },
+            {
+              "id": "v10",
+              "name": "CHANNEL_TAG",
+              "value": "@YourChannel",
+              "type": "string"
+            },
+            {
+              "id": "v11",
+              "name": "TOPIC",
+              "value": "Top 3 Unbelievable Facts About Ancient India",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d8e9f0a1-1002-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "1. Config and API Keys",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [300, 340]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $json.GEMINI_MODEL }}:generateContent",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $json.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: 'You are a professional YouTube Shorts producer and scriptwriter for Indian audiences. Topic: ' + $json.TOPIC + '. Voiceover language: ' + $json.LANGUAGE + '. Return ONLY a valid JSON object with exactly these keys: \"title\" (catchy SEO title under 90 chars), \"description\" (2 short lines + exactly 5 hashtags including #Shorts), \"tags\" (comma separated, 10-12 SEO tags), \"scenes\" (EXACTLY 4 items, each an object with: \"hook\" = 3-6 word ALL CAPS punchy on-screen caption, \"voiceover\" = 1-2 engaging spoken sentences of 15-20 words in the voiceover language (if Hindi, write in Devanagari script), \"veo_prompt\" = one cinematic 8-second vertical 9:16 b-roll prompt for an AI video model describing subject, camera motion, setting, lighting and mood, strictly NO on-screen text/captions/watermarks/logos, \"pexels_query\" = 2-3 simple English words for searching stock footage as fallback, e.g. \"indian temple aerial\").' }] }], generationConfig: { responseMimeType: 'application/json' } }) }}",
+        "options": {}
+      },
+      "id": "d8e9f0a1-1003-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "2. Gemini Pro (Script and Plan)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [520, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gemini ka JSON parse karke har scene alag item banao\nconst raw = $input.first().json.candidates[0].content.parts[0].text;\nconst cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();\nconst parsed = JSON.parse(cleaned);\n\nif (!Array.isArray(parsed.scenes) || parsed.scenes.length === 0) {\n  throw new Error('Gemini ne scenes nahi diye — workflow dobara run karo');\n}\n\nconst meta = {\n  title: parsed.title,\n  description: parsed.description,\n  tags: parsed.tags,\n};\n\nreturn parsed.scenes.map((s, i) => ({\n  json: {\n    scene_index: i + 1,\n    hook: s.hook,\n    voiceover: s.voiceover,\n    veo_prompt: s.veo_prompt,\n    pexels_query: s.pexels_query,\n    meta,\n  },\n}));"
+      },
+      "id": "d8e9f0a1-1004-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Split Scenes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [740, 340]
+    },
+    {
+      "parameters": {
+        "url": "https://api.pexels.com/videos/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.pexels_query }}"
+            },
+            {
+              "name": "orientation",
+              "value": "portrait"
+            },
+            {
+              "name": "per_page",
+              "value": "5"
+            },
+            {
+              "name": "min_duration",
+              "value": "5"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $('1. Config and API Keys').first().json.PEXELS_API_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d8e9f0a1-1005-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "3. Pexels (Fallback Footage)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 340]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-omni",
+              "leftValue": "={{ $('1. Config and API Keys').first().json.VIDEO_PROVIDER }}",
+              "rightValue": "omni",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d8e9f0a1-1006-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Use Omni?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1180, 340]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/interactions",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $('1. Config and API Keys').first().json.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: $('1. Config and API Keys').first().json.OMNI_MODEL, input: '8 second vertical 9:16 cinematic b-roll video, strictly no on-screen text, captions, watermarks or logos: ' + $('Split Scenes').all()[$itemIndex].json.veo_prompt, response_format: { type: 'video', delivery: 'uri', aspect_ratio: '9:16' } }) }}",
+        "options": {}
+      },
+      "id": "d8e9f0a1-1007-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "4a. Omni (Submit Scenes)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1400, 760]
+    },
+    {
+      "parameters": {
+        "amount": 45,
+        "unit": "seconds"
+      },
+      "id": "d8e9f0a1-1008-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Wait 45s (Omni)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1620, 760]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Har poll cycle par Omni file IDs FRESH items ke roop me do\n// (loop-back par input me file_id nahi hota, isliye hamesha submit node se lo)\nreturn $('4a. Omni (Submit Scenes)').all()\n  .filter((i) => i.json && i.json.output_video && i.json.output_video.uri)\n  .map((i) => ({ json: { file_id: i.json.output_video.uri.split('/').pop() } }));"
+      },
+      "id": "d8e9f0a1-1009-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Omni Files",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1730, 540]
+    },
+    {
+      "parameters": {
+        "url": "=https://generativelanguage.googleapis.com/v1beta/files/{{ $json.file_id }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $('1. Config and API Keys').first().json.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d8e9f0a1-1010-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Omni (Check Files)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1950, 760]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Omni file states check karo — PROCESSING pending, FAILED wale Pexels fallback me jayenge\nconst states = $input.all();\nconst sceneItems = $('Split Scenes').all();\n\nif (states.length !== sceneItems.length) {\n  throw new Error('Omni file items (' + states.length + ') scenes (' + sceneItems.length + ') se match nahi kar rahe');\n}\n\nconst pending = states.filter((f) => f.json.state !== 'ACTIVE' && f.json.state !== 'FAILED').length;\nif (pending > 0) {\n  return [{ json: { all_done: 'false', pending } }];\n}\n\nconst scenes = sceneItems.map((s, i) => {\n  const f = states[i].json;\n  const fileId = (f.name || ('files/' + $('Omni Files').all()[i].json.file_id)).split('/').pop();\n  return {\n    scene_index: s.json.scene_index,\n    hook: s.json.hook,\n    voiceover: s.json.voiceover,\n    pexels_query: s.json.pexels_query,\n    video_uri: f.state === 'ACTIVE'\n      ? 'https://generativelanguage.googleapis.com/v1beta/files/' + fileId + ':download?alt=media'\n      : null,\n  };\n});\n\nconst okCount = scenes.filter((s) => s.video_uri).length;\nif (okCount === 0) {\n  throw new Error('Omni se ek bhi clip nahi bana — billing/quota check karo ya topic thoda change karke rerun karo');\n}\n\nreturn [{ json: { all_done: 'true', scenes, ai_ok: okCount, ai_fallback: scenes.length - okCount } }];"
+      },
+      "id": "d8e9f0a1-1011-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Omni Collector",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2170, 760]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-omni-done",
+              "leftValue": "={{ $json.all_done }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d8e9f0a1-1012-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Omni Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2390, 760]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $('1. Config and API Keys').first().json.VEO_MODEL }}:predictLongRunning",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{ $('1. Config and API Keys').first().json.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ instances: [{ prompt: $('Split Scenes').all()[$itemIndex].json.veo_prompt }], parameters: { aspectRatio: '9:16', resolution: '720p', negativePrompt: 'text overlays, captions, subtitles, watermark, logo, brand name' } }) }}",
+        "options": {}
+      },
+      "id": "d8e9f0a1-1013-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "4b. Veo (Submit Scenes)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1400, 340]
+    },
+    {
+      "parameters": {
+        "amount": 60,
+        "unit": "seconds"
+      },
+      "id": "d8e9f0a1-1014-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Wait 60s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1620, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Har poll cycle par Veo operation names FRESH items ke roop me do\nreturn $('4b. Veo (Submit Scenes)').all()\n  .filter((i) => i.json && i.json.name)\n  .map((i) => ({ json: { name: i.json.name } }));"
+      },
+      "id": "d8e9f0a1-1015-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Veo Operations",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1730, 120]
+    },
+    {
+      "parameters": {
+        "url": "=https://generativelanguage.googleapis.com/v1beta/{{ $json.name }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{ $('1. Config and API Keys').first().json.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d8e9f0a1-1016-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Veo (Check Status)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1950, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Veo results collect karo — fail hone wale scenes Pexels fallback me jayenge\nconst ops = $input.all();\nconst sceneItems = $('Split Scenes').all();\n\nif (ops.length !== sceneItems.length) {\n  throw new Error('Veo status items (' + ops.length + ') scenes (' + sceneItems.length + ') se match nahi kar rahe');\n}\n\nconst pending = ops.filter((o) => !o.json.done).length;\nif (pending > 0) {\n  return [{ json: { all_done: 'false', pending } }];\n}\n\nlet failMsg = '';\nconst failed = ops.find((o) => o.json.error);\nif (failed) {\n  failMsg = (failed.json.error && failed.json.error.message) || 'unknown Veo error';\n}\n\nconst scenes = sceneItems.map((s, i) => {\n  const resp = ops[i].json.response || {};\n  const samples = (resp.generateVideoResponse || {}).generatedSamples || [];\n  return {\n    scene_index: s.json.scene_index,\n    hook: s.json.hook,\n    voiceover: s.json.voiceover,\n    pexels_query: s.json.pexels_query,\n    video_uri: samples[0] && samples[0].video ? samples[0].video.uri : null,\n  };\n});\n\nconst okCount = scenes.filter((s) => s.video_uri).length;\nif (okCount === 0) {\n  throw new Error('Veo se ek bhi clip nahi bana' + (failMsg ? ' — ' + failMsg : '') + '. Billing check karo ya topic thoda change karke rerun karo.');\n}\n\nreturn [{ json: { all_done: 'true', scenes, ai_ok: okCount, ai_fallback: scenes.length - okCount } }];"
+      },
+      "id": "d8e9f0a1-1017-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Veo Collector",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2170, 340]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-veo-done",
+              "leftValue": "={{ $json.all_done }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d8e9f0a1-1018-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Veo Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2390, 340]
+    },
+    {
+      "parameters": {
+        "amount": 45,
+        "unit": "seconds"
+      },
+      "id": "d8e9f0a1-1019-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Wait 45s (Veo)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [2610, 120]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Jo scene AI engine se bana, sirf wahi download ke liye nikalo (Omni ya Veo — jo chala)\nconst provider = ($('1. Config and API Keys').first().json.VIDEO_PROVIDER || 'omni') === 'omni' ? 'omni' : 'veo';\nconst src = provider === 'omni' ? $('Omni Collector').first().json : $('Veo Collector').first().json;\n\nreturn src.scenes\n  .filter((s) => s.video_uri)\n  .map((s) => ({ json: { ...s, provider } }));"
+      },
+      "id": "d8e9f0a1-1020-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Clips Ready",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2830, 540]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.video_uri }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{ $('1. Config and API Keys').first().json.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "d8e9f0a1-1021-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "5. Download AI Clip",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3050, 540]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://tmpfiles.org/api/v1/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d8e9f0a1-1022-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "6. Host AI Clip (tmpfiles.org)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3270, 540]
+    },
+    {
+      "parameters": {
+        "jsCode": "// AI clips + Pexels fallback merge karke final scene list banao\nconst collected = $('Clips Ready').all().map((i) => i.json);\nconst hosted = $('6. Host AI Clip (tmpfiles.org)').all();\nconst pexelsItems = $('3. Pexels (Fallback Footage)').all();\nconst first = $('Split Scenes').first().json;\n\nconst dl = (u) => u.replace('tmpfiles.org/', 'tmpfiles.org/dl/');\n\nfunction pickFile(videos) {\n  if (!videos || !Array.isArray(videos.videos) || videos.videos.length === 0) return null;\n  for (const v of videos.videos) {\n    const files = (v.video_files || [])\n      .filter((f) => f.link)\n      .sort((a, b) => (b.height || 0) - (a.height || 0));\n    const portrait = files.find((f) => f.height > f.width && f.height >= 1280);\n    if (portrait) return portrait.link;\n  }\n  const v0 = videos.videos[0];\n  const f0 = v0.video_files && v0.video_files[0];\n  return f0 ? f0.link : null;\n}\n\nlet ptr = 0;\nconst scenes = collected.map((s) => {\n  let clip_url = null;\n  let source = 'pexels';\n  if (s.video_uri && hosted[ptr]) {\n    clip_url = dl(hosted[ptr].json.data.url);\n    ptr++;\n    source = s.provider || 'ai';\n  } else {\n    clip_url = pickFile(pexelsItems[s.scene_index - 1] ? pexelsItems[s.scene_index - 1].json : null);\n  }\n  return {\n    scene_index: s.scene_index,\n    hook: s.hook,\n    voiceover: s.voiceover,\n    clip_url,\n    source,\n  };\n});\n\nreturn [{\n  json: {\n    meta: first.meta,\n    scenes,\n    ai_ok: collected.filter((s) => s.video_uri).length,\n    pexels_fallback: scenes.filter((s) => s.source === 'pexels').length,\n  },\n}];"
+      },
+      "id": "d8e9f0a1-1023-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Assets Ready",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3490, 540]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Final movie: AI/Pexels footage + free Hindi voice + boxed captions + hooks + branded outro\nconst assets = $('Assets Ready').first().json;\nconst cfg = $('1. Config and API Keys').first().json;\nconst pexelsItems = $('3. Pexels (Fallback Footage)').all();\nconst voice = cfg.VOICE || 'hi-IN-MadhurNeural';\nconst subLang = (cfg.LANGUAGE || 'Hindi').toLowerCase().includes('eng') ? 'en' : 'hi';\n\nfunction pickFile(videos) {\n  if (!videos || !Array.isArray(videos.videos) || videos.videos.length === 0) return null;\n  for (const v of videos.videos) {\n    const files = (v.video_files || [])\n      .filter((f) => f.link)\n      .sort((a, b) => (b.height || 0) - (a.height || 0));\n    const portrait = files.find((f) => f.height > f.width && f.height >= 1280);\n    if (portrait) return portrait.link;\n  }\n  return null;\n}\n\nconst scenes = assets.scenes.map((s, i) => {\n  const elements = [];\n  // Background footage — AI clip ya Pexels fallback (mute, voiceover clean)\n  if (s.clip_url) elements.push({ type: 'video', src: s.clip_url, volume: 0 });\n  // Free neural Hindi voiceover — scene duration voice se auto-fit hoti hai\n  elements.push({ type: 'voice', text: s.voiceover, voice });\n  // Auto-synced boxed captions (voice ke saath)\n  elements.push({\n    type: 'subtitles',\n    language: subLang,\n    settings: {\n      style: 'boxed-word',\n      'font-family': 'Inter',\n      'font-size': 64,\n      'word-color': '#FFFFFF',\n      'line-color': '#FFFFFF',\n      'outline-color': '#000000',\n      'box-color': '#000000',\n      position: 'bottom-center',\n    },\n  });\n  // Golden hook title (upar)\n  elements.push({ type: 'text', text: s.hook, position: 'top-center', 'font-size': 60, color: '#FFD700' });\n\n  const scene = { comment: 'Scene ' + (i + 1) + ' (' + s.source + ')', elements };\n  if (i > 0) scene.transition = { style: 'fade', duration: 0.5 };\n  return scene;\n});\n\n// Branded outro — FOLLOW CTA (Pexels footage background)\nconst outroClip = pickFile(pexelsItems[0] ? pexelsItems[0].json : null);\nconst outroElements = [];\nif (outroClip) outroElements.push({ type: 'video', src: outroClip, volume: 0 });\noutroElements.push({ type: 'text', text: 'FOLLOW ' + (cfg.CHANNEL_TAG || ''), position: 'center', 'font-size': 84, color: '#FFFFFF' });\noutroElements.push({ type: 'text', text: 'LIKE • SHARE • SUBSCRIBE', position: 'bottom-center', 'font-size': 44, color: '#FFD700' });\nscenes.push({ comment: 'Outro', duration: 3, elements: outroElements, transition: { style: 'fade', duration: 0.5 } });\n\nconst movie = {\n  comment: 'AI Short — ' + (assets.ai_ok > 0 ? 'AI-generated' : 'stock') + ' footage + free stack (Gemini Pro + JSON2Video)',\n  resolution: 'instagram-story',\n  quality: 'high',\n  scenes,\n};\n\nreturn [{ json: { movie, meta: assets.meta, ai_ok: assets.ai_ok, pexels_fallback: assets.pexels_fallback } }];"
+      },
+      "id": "d8e9f0a1-1024-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Build Movie JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3710, 540]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.json2video.com/v2/movies",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $('1. Config and API Keys').first().json.JSON2VIDEO_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.movie) }}",
+        "options": {}
+      },
+      "id": "d8e9f0a1-1025-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "7. JSON2Video (Render)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3930, 540]
+    },
+    {
+      "parameters": {
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "id": "d8e9f0a1-1026-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Wait 30s (Render)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [4150, 540]
+    },
+    {
+      "parameters": {
+        "url": "https://api.json2video.com/v2/movies",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "project",
+              "value": "={{ $('7. JSON2Video (Render)').first().json.project }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $('1. Config and API Keys').first().json.JSON2VIDEO_API_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d8e9f0a1-1027-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Check Render Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4370, 540]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "or",
+          "conditions": [
+            {
+              "id": "cond-done",
+              "leftValue": "={{ $json.movie.status }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "cond-error",
+              "leftValue": "={{ $json.movie.status }}",
+              "rightValue": "error",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d8e9f0a1-1028-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Render Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [4590, 540]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Render result validate karo — error ho to clear message do\nconst status = $input.first().json.movie || {};\nif (status.status === 'error') {\n  throw new Error('Render fail hua: ' + (status.message || 'unknown JSON2Video error'));\n}\nif (!status.url) {\n  throw new Error('Render URL nahi mila — JSON2Video quota/plan check karo');\n}\nreturn [{ json: { url: status.url } }];"
+      },
+      "id": "d8e9f0a1-1029-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "Validate Render",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4810, 540]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "d8e9f0a1-1030-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "8. Download Final Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [5030, 540]
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $('Build Movie JSON').first().json.meta.title }}",
+        "categoryId": "27",
+        "binaryProperty": "data",
+        "options": {
+          "description": "={{ $('Build Movie JSON').first().json.meta.description }}",
+          "privacyStatus": "private",
+          "tags": "={{ $('Build Movie JSON').first().json.meta.tags }}"
+        }
+      },
+      "id": "d8e9f0a1-1031-4b5c-9d0e-4f5a6b7c8d92",
+      "name": "9. Upload to YouTube",
+      "type": "n8n-nodes-base.youtube",
+      "typeVersion": 1,
+      "position": [5250, 540]
+    }
+  ],
+  "connections": {
+    "Start Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "1. Config and API Keys",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Config and API Keys": {
+      "main": [
+        [
+          {
+            "node": "2. Gemini Pro (Script and Plan)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Gemini Pro (Script and Plan)": {
+      "main": [
+        [
+          {
+            "node": "Split Scenes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Scenes": {
+      "main": [
+        [
+          {
+            "node": "3. Pexels (Fallback Footage)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Pexels (Fallback Footage)": {
+      "main": [
+        [
+          {
+            "node": "Use Omni?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use Omni?": {
+      "main": [
+        [
+          {
+            "node": "4a. Omni (Submit Scenes)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4b. Veo (Submit Scenes)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4a. Omni (Submit Scenes)": {
+      "main": [
+        [
+          {
+            "node": "Wait 45s (Omni)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 45s (Omni)": {
+      "main": [
+        [
+          {
+            "node": "Omni Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Omni Files": {
+      "main": [
+        [
+          {
+            "node": "Omni (Check Files)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Omni (Check Files)": {
+      "main": [
+        [
+          {
+            "node": "Omni Collector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Omni Collector": {
+      "main": [
+        [
+          {
+            "node": "Omni Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Omni Done?": {
+      "main": [
+        [
+          {
+            "node": "Clips Ready",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 45s (Omni)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4b. Veo (Submit Scenes)": {
+      "main": [
+        [
+          {
+            "node": "Wait 60s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 60s": {
+      "main": [
+        [
+          {
+            "node": "Veo Operations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Veo Operations": {
+      "main": [
+        [
+          {
+            "node": "Veo (Check Status)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Veo (Check Status)": {
+      "main": [
+        [
+          {
+            "node": "Veo Collector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Veo Collector": {
+      "main": [
+        [
+          {
+            "node": "Veo Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Veo Done?": {
+      "main": [
+        [
+          {
+            "node": "Clips Ready",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 45s (Veo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 45s (Veo)": {
+      "main": [
+        [
+          {
+            "node": "Veo Operations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clips Ready": {
+      "main": [
+        [
+          {
+            "node": "5. Download AI Clip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Download AI Clip": {
+      "main": [
+        [
+          {
+            "node": "6. Host AI Clip (tmpfiles.org)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6. Host AI Clip (tmpfiles.org)": {
+      "main": [
+        [
+          {
+            "node": "Assets Ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assets Ready": {
+      "main": [
+        [
+          {
+            "node": "Build Movie JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Movie JSON": {
+      "main": [
+        [
+          {
+            "node": "7. JSON2Video (Render)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7. JSON2Video (Render)": {
+      "main": [
+        [
+          {
+            "node": "Wait 30s (Render)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 30s (Render)": {
+      "main": [
+        [
+          {
+            "node": "Check Render Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Render Status": {
+      "main": [
+        [
+          {
+            "node": "Render Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render Done?": {
+      "main": [
+        [
+          {
+            "node": "Validate Render",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 30s (Render)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Render": {
+      "main": [
+        [
+          {
+            "node": "8. Download Final Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "8. Download Final Video": {
+      "main": [
+        [
+          {
+            "node": "9. Upload to YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}
