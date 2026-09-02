@@ -235,6 +235,16 @@
     },
     {
       "parameters": {
+        "jsCode": "// Har poll cycle par 4 Veo operation names FRESH items ke roop me do\n// (loop-back par input me .name nahi hota, isliye hamesha submit node se lo)\nreturn $('5. Veo (Submit Scenes)').all()\n  .filter((i) => i.json && i.json.name)\n  .map((i) => ({ json: { name: i.json.name } }));"
+      },
+      "id": "e5f6a7b8-1028-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "Veo Operations",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1950, 100]
+    },
+    {
+      "parameters": {
         "url": "=https://generativelanguage.googleapis.com/v1beta/{{ $json.name }}",
         "sendHeaders": true,
         "headerParameters": {
@@ -255,7 +265,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Saare Veo operations check karo — sab done hone tak pending batao\nconst ops = $input.all();\n\nconst failed = ops.find((o) => o.json.error);\nif (failed) {\n  const msg = (failed.json.error && failed.json.error.message) || JSON.stringify(failed.json.error);\n  throw new Error('Veo render fail hua: ' + msg);\n}\n\nconst pending = ops.filter((o) => !o.json.done).length;\nif (pending > 0) {\n  return [{ json: { all_done: false, pending } }];\n}\n\nconst scenes = $('Split Scenes').all().map((s, i) => {\n  const resp = ops[i].json.response || {};\n  const gvr = resp.generateVideoResponse || {};\n  const samples = gvr.generatedSamples || [];\n  return {\n    scene_index: s.json.scene_index,\n    hook: s.json.hook,\n    captions: s.json.captions,\n    voiceover: s.json.voiceover,\n    video_uri: samples[0] && samples[0].video ? samples[0].video.uri : null,\n  };\n});\n\nif (scenes.some((s) => !s.video_uri)) {\n  throw new Error('Veo ne video URI nahi diya (safety filter block ho sakta hai) — topic/prompt thoda change karke try karo');\n}\n\nreturn [{ json: { all_done: true, scenes } }];"
+        "jsCode": "// Saare Veo operations check karo — sab done hone tak pending batao\nconst ops = $input.all();\nconst sceneCount = $('Split Scenes').all().length;\n\nif (ops.length !== sceneCount) {\n  throw new Error('Veo status items (' + ops.length + ') scenes (' + sceneCount + ') se match nahi kar rahe');\n}\n\nconst failed = ops.find((o) => o.json.error);\nif (failed) {\n  const msg = (failed.json.error && failed.json.error.message) || JSON.stringify(failed.json.error);\n  throw new Error('Veo render fail hua: ' + msg);\n}\n\nconst pending = ops.filter((o) => !o.json.done).length;\nif (pending > 0) {\n  return [{ json: { all_done: 'false', pending } }];\n}\n\nconst scenes = $('Split Scenes').all().map((s, i) => {\n  const resp = ops[i].json.response || {};\n  const gvr = resp.generateVideoResponse || {};\n  const samples = gvr.generatedSamples || [];\n  return {\n    scene_index: s.json.scene_index,\n    hook: s.json.hook,\n    captions: s.json.captions,\n    voiceover: s.json.voiceover,\n    video_uri: samples[0] && samples[0].video ? samples[0].video.uri : null,\n  };\n});\n\nif (scenes.some((s) => !s.video_uri)) {\n  throw new Error('Veo ne video URI nahi diya (safety filter block ho sakta hai) — topic/prompt thoda change karke try karo');\n}\n\nreturn [{ json: { all_done: 'true', scenes } }];"
       },
       "id": "e5f6a7b8-1011-4c5d-9e0f-1a2b3c4d5e6a",
       "name": "Veo Collector",
@@ -432,7 +442,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Final movie JSON: Veo footage + Google TTS voiceover + hook + karaoke captions + branded outro\nconst assets = $('Assets Ready').first().json;\nconst cfg = $('1. Config and API Keys').first().json;\nconst outroUrl = $input.first().json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');\n\nconst scenes = assets.scenes.map((s, i) => {\n  const elements = [\n    // Veo clip (mute — voiceover upar baithega)\n    { type: 'video', src: s.clip_url, volume: 0 },\n    // Gemini Pro TTS voiceover\n    { type: 'audio', src: s.audio_url },\n    // Golden hook caption (upar)\n    { type: 'text', text: s.hook, position: 'top-center', 'font-size': 64, color: '#FFD700' },\n  ];\n  // Word-by-word karaoke captions (neeche, staggered)\n  (s.captions || []).slice(0, 3).forEach((line, c) => {\n    elements.push({\n      type: 'text',\n      text: line,\n      position: 'bottom-center',\n      'font-size': 72,\n      color: '#FFFFFF',\n      start: 0.4 + c * 2.6,\n      duration: 2.6,\n    });\n  });\n  const scene = { comment: 'Scene ' + (i + 1), duration: 8, elements };\n  if (i > 0) scene.transition = { style: 'fade', duration: 0.5 };\n  return scene;\n});\n\n// Branded outro (Nano Banana Pro image + follow CTA)\nscenes.push({\n  comment: 'Outro',\n  duration: 3,\n  elements: [\n    { type: 'image', src: outroUrl, duration: 3 },\n    { type: 'text', text: 'FOLLOW ' + (cfg.CHANNEL_TAG || ''), position: 'center', 'font-size': 84, color: '#FFFFFF' },\n  ],\n  transition: { style: 'fade', duration: 0.5 },\n});\n\nconst movie = {\n  comment: 'Professional AI Short — Gemini Pro + Veo + Nano Banana Pro',\n  resolution: 'instagram-story',\n  quality: 'high',\n  scenes,\n};\n\nreturn [{ json: { movie, meta: assets.meta } }];"
+        "jsCode": "// Final movie JSON: Veo footage + Google TTS voiceover + hook + karaoke captions + branded outro\nconst assets = $('Assets Ready').first().json;\nconst cfg = $('1. Config and API Keys').first().json;\nconst outroUrl = $input.first().json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');\n\nconst scenes = assets.scenes.map((s, i) => {\n  const elements = [\n    // Veo clip (mute — voiceover upar baithega)\n    { type: 'video', src: s.clip_url, volume: 0 },\n    // Gemini Pro TTS voiceover\n    { type: 'audio', src: s.audio_url },\n    // Golden hook caption (upar)\n    { type: 'text', text: s.hook, position: 'top-center', 'font-size': 64, color: '#FFD700' },\n  ];\n  // Word-by-word karaoke captions (neeche, staggered)\n  (s.captions || []).slice(0, 3).forEach((line, c) => {\n    elements.push({\n      type: 'text',\n      text: line,\n      position: 'bottom-center',\n      'font-size': 72,\n      color: '#FFFFFF',\n      start: 0.4 + c * 2.6,\n      duration: 2.6,\n    });\n  });\n  const scene = { comment: 'Scene ' + (i + 1), elements };\n  if (i > 0) scene.transition = { style: 'fade', duration: 0.5 };\n  return scene;\n});\n\n// Branded outro (Nano Banana Pro image + follow CTA)\nscenes.push({\n  comment: 'Outro',\n  duration: 3,\n  elements: [\n    { type: 'image', src: outroUrl, duration: 3 },\n    { type: 'text', text: 'FOLLOW ' + (cfg.CHANNEL_TAG || ''), position: 'center', 'font-size': 84, color: '#FFFFFF' },\n  ],\n  transition: { style: 'fade', duration: 0.5 },\n});\n\nconst movie = {\n  comment: 'Professional AI Short — Gemini Pro + Veo + Nano Banana Pro',\n  resolution: 'instagram-story',\n  quality: 'high',\n  scenes,\n};\n\nreturn [{ json: { movie, meta: assets.meta } }];"
       },
       "id": "e5f6a7b8-1021-4c5d-9e0f-1a2b3c4d5e6a",
       "name": "Build Movie JSON",
@@ -673,6 +683,17 @@
       "main": [
         [
           {
+            "node": "Veo Operations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Veo Operations": {
+      "main": [
+        [
+          {
             "node": "Veo (Check Status)",
             "type": "main",
             "index": 0
@@ -724,7 +745,7 @@
       "main": [
         [
           {
-            "node": "Veo (Check Status)",
+            "node": "Veo Operations",
             "type": "main",
             "index": 0
           }
