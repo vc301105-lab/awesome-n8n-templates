@@ -1,0 +1,886 @@
+{
+  "name": "Professional AI YouTube Shorts Studio (Full Google Pro Stack)",
+  "tags": [],
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## ⚙️ SETUP — sab kuch ek hi API key se\n\n**1. API key (sirf YE ek chahiye):** [aistudio.google.com/apikey](https://aistudio.google.com/apikey) → `GEMINI_API_KEY`\n\n**2. BILLING enable karo (zaroori!):** AI Studio → Billing → **Upgrade to Pay as you go**\n⚠️ Google One AI Pro **subscription** API ke liye KaAM NAHI karta — subscription ka quota sirf Gemini app mein chalta hai. Veo / Pro TTS / Nano Banana Pro API se sirf billing enable karne pe chalte hain.\n\n**3. JSON2VIDEO_API_KEY (free):** [json2video.com/get-api-key](https://json2video.com/get-api-key/) — Google ka video *stitching* API nahi hai, isliye final assembly ke liye ye free tool.\n\n**4. Last node pe YouTube OAuth2 credential.**\n\n### 💰 Approx cost per video (pay-as-you-go)\n| Cheez | Cost |\n|---|---|\n| Veo 3.1 Fast 4 clips x 8s (720p) | ~$3.20 |\n| Nano Banana Pro outro image | ~$0.15 |\n| Gemini Pro TTS voiceover | ~$0.02 |\n| Gemini 2.5 Pro script | free tier |\n| **Total** | **~$3.4 / ₹290 per Short** |\n\nBudget bachana ho to `VEO_MODEL` = `veo-3.1-lite-generate-preview` (~$1.60/video).\n\n### 🎙️ Voices (Config mein badlo)\nMale: **Fenrir** (default, energetic), Puck, Charon (informative) • Female: Kore (firm), Zephyr (bright), Aoede (breezy)",
+        "width": 520,
+        "height": 620,
+        "color": 4
+      },
+      "id": "e5f6a7b8-0001-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "Sticky Note — Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-400, -420]
+    },
+    {
+      "parameters": {
+        "content": "## 🎬 Professional Pipeline (All-Google generation)\n\n**TOPIC → publish-ready Short, ~5-8 min:**\n\n1. **Gemini 2.5 Pro** pura plan banata hai — title, description, tags, 4 scenes (hook + voiceover + karaoke captions + Veo prompt) + outro design prompt\n2. **Gemini Pro TTS** har scene ka voiceover (24kHz WAV, natural narration)\n3. **Veo 3.1** har scene ka cinematic 8s vertical (9:16) footage generate karta hai (parallel, 4 clips)\n4. **Nano Banana Pro** branded outro background image banata hai\n5. **JSON2Video** sab jodta hai: footage + voiceover + golden hook + word-by-word captions + FOLLOW outro (1080x1920)\n6. Render complete hone tak auto-poll → MP4 download → **YouTube private upload**\n\n### ⏱️ Timings\n- Veo clips: 2-6 min (workflow khud poll karta hai)\n- JSON2Video render: 1-3 min\n- tmpfiles.org links ~60 min valid (audio/clips/outro hosting)\n\n### ⚠️ Notes\n- Video **private** upload hoti hai — review karke public karo\n- Veo safety-filter block kare to Collector node clear error dega — topic/prompt thoda change karo\n- JSON2Video free plan = 600 sec/month (is video size ke hisab se ok). Style tweak karna ho to `Build Movie JSON` node dekho\n- Category: 27 (Education). Shorts ke liye #Shorts description mein add kar sakte ho",
+        "width": 520,
+        "height": 620,
+        "color": 6
+      },
+      "id": "e5f6a7b8-0002-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "Sticky Note — Flow",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [140, -420]
+    },
+    {
+      "parameters": {},
+      "id": "e5f6a7b8-1001-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "Start Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [100, 340]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "GEMINI_API_KEY",
+              "value": "YOUR_GEMINI_API_KEY",
+              "type": "string"
+            },
+            {
+              "id": "p2",
+              "name": "GEMINI_MODEL",
+              "value": "gemini-2.5-pro",
+              "type": "string"
+            },
+            {
+              "id": "p3",
+              "name": "TTS_MODEL",
+              "value": "gemini-2.5-pro-preview-tts",
+              "type": "string"
+            },
+            {
+              "id": "p4",
+              "name": "VEO_MODEL",
+              "value": "veo-3.1-fast-generate-preview",
+              "type": "string"
+            },
+            {
+              "id": "p5",
+              "name": "VOICE",
+              "value": "Fenrir",
+              "type": "string"
+            },
+            {
+              "id": "p6",
+              "name": "LANGUAGE",
+              "value": "Hindi",
+              "type": "string"
+            },
+            {
+              "id": "p7",
+              "name": "JSON2VIDEO_API_KEY",
+              "value": "YOUR_JSON2VIDEO_API_KEY",
+              "type": "string"
+            },
+            {
+              "id": "p8",
+              "name": "CHANNEL_TAG",
+              "value": "@YourChannel",
+              "type": "string"
+            },
+            {
+              "id": "p9",
+              "name": "TOPIC",
+              "value": "Top 3 Unbelievable Facts About Ancient India",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e5f6a7b8-1002-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "1. Config and API Keys",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [300, 340]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $json.GEMINI_MODEL }}:generateContent",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $json.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: 'You are a professional YouTube Shorts producer and scriptwriter for Indian audiences. Topic: ' + $json.TOPIC + '. Voiceover language: ' + $json.LANGUAGE + '. Return ONLY a valid JSON object with exactly these keys: \"title\" (catchy, under 90 chars), \"description\" (2 short lines + exactly 5 hashtags including #Shorts), \"tags\" (comma separated, 10-12 SEO tags), \"outro_prompt\" (visual prompt for a vibrant, bold outro background image, empty center space), \"scenes\" (EXACTLY 4 items, each an object with: \"hook\" = 3-6 word ALL CAPS on-screen caption, \"voiceover\" = 1-2 spoken sentences of 15-20 words in the voiceover language (if Hindi, write in Devanagari script), \"captions\" = exactly 3 short strings of 2-4 words each in the same language as the hook, for karaoke-style subtitles, \"veo_prompt\" = one cinematic 8-second vertical 9:16 b-roll prompt for Google Veo describing subject, camera motion, setting, lighting and mood, with strictly NO on-screen text, captions, watermarks or logos).' }] }], generationConfig: { responseMimeType: 'application/json' } }) }}",
+        "options": {}
+      },
+      "id": "e5f6a7b8-1003-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "2. Gemini Pro (Script and Plan)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [520, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gemini ka JSON parse karke har scene ko alag item banao\nconst raw = $input.first().json.candidates[0].content.parts[0].text;\nconst cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();\nconst parsed = JSON.parse(cleaned);\n\nif (!Array.isArray(parsed.scenes) || parsed.scenes.length === 0) {\n  throw new Error('Gemini ne scenes nahi diye — workflow dobara run karo');\n}\n\nconst meta = {\n  title: parsed.title,\n  description: parsed.description,\n  tags: parsed.tags,\n};\n\nreturn parsed.scenes.map((s, i) => ({\n  json: {\n    scene_index: i + 1,\n    hook: s.hook,\n    voiceover: s.voiceover,\n    captions: Array.isArray(s.captions) ? s.captions : [],\n    veo_prompt: s.veo_prompt,\n    outro_prompt: parsed.outro_prompt,\n    meta,\n  },\n}));"
+      },
+      "id": "e5f6a7b8-1004-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "Split Scenes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [740, 340]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $('1. Config and API Keys').first().json.TTS_MODEL }}:generateContent",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $('1. Config and API Keys').first().json.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: 'Narrate this in ' + $('1. Config and API Keys').first().json.LANGUAGE + ' with an energetic, confident YouTube-narrator tone: ' + $('Split Scenes').all()[$itemIndex].json.voiceover }] }], generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: $('1. Config and API Keys').first().json.VOICE } } } } }) }}",
+        "options": {}
+      },
+      "id": "e5f6a7b8-1005-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "3. Gemini Pro TTS (Voiceover)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gemini TTS ka raw PCM (base64) -> WAV file (24kHz mono 16-bit)\nconst scenes = $('Split Scenes').all();\n\nfunction wavFromBase64(b64) {\n  const pcm = Buffer.from(b64, 'base64');\n  const sampleRate = 24000, bitsPerSample = 16, channels = 1;\n  const byteRate = (sampleRate * channels * bitsPerSample) / 8;\n  const blockAlign = (channels * bitsPerSample) / 8;\n  const header = Buffer.alloc(44);\n  header.write('RIFF', 0);\n  header.writeUInt32LE(36 + pcm.length, 4);\n  header.write('WAVE', 8);\n  header.write('fmt ', 12);\n  header.writeUInt32LE(16, 16);\n  header.writeUInt16LE(1, 20);\n  header.writeUInt16LE(channels, 22);\n  header.writeUInt32LE(sampleRate, 24);\n  header.writeUInt32LE(byteRate, 28);\n  header.writeUInt16LE(blockAlign, 32);\n  header.writeUInt16LE(bitsPerSample, 34);\n  header.write('data', 36);\n  header.writeUInt32LE(pcm.length, 40);\n  return Buffer.concat([header, pcm]).toString('base64');\n}\n\nreturn $input.all().map((item, i) => {\n  const parts = item.json.candidates[0].content.parts;\n  const audioPart = parts.find((p) => p.inlineData) || parts[0];\n  const s = scenes[i].json;\n  return {\n    json: {\n      scene_index: s.scene_index,\n      hook: s.hook,\n      voiceover: s.voiceover,\n      captions: s.captions,\n      veo_prompt: s.veo_prompt,\n    },\n    binary: {\n      data: {\n        data: wavFromBase64(audioPart.inlineData.data),\n        mimeType: 'audio/wav',\n        fileName: 'scene-' + s.scene_index + '-voiceover.wav',\n      },\n    },\n  };\n});"
+      },
+      "id": "e5f6a7b8-1006-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "Voiceover to WAV",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1180, 340]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://tmpfiles.org/api/v1/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e5f6a7b8-1007-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "4. Host Voiceover (tmpfiles.org)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1400, 340]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $('1. Config and API Keys').first().json.VEO_MODEL }}:predictLongRunning",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{ $('1. Config and API Keys').first().json.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ instances: [{ prompt: $('Split Scenes').all()[$itemIndex].json.veo_prompt }], parameters: { aspectRatio: '9:16', resolution: '720p', negativePrompt: 'text overlays, captions, subtitles, watermark, logo, brand name' } }) }}",
+        "options": {}
+      },
+      "id": "e5f6a7b8-1008-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "5. Veo (Submit Scenes)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1620, 340]
+    },
+    {
+      "parameters": {
+        "amount": 60,
+        "unit": "seconds"
+      },
+      "id": "e5f6a7b8-1009-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "Wait 60s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1840, 340]
+    },
+    {
+      "parameters": {
+        "url": "=https://generativelanguage.googleapis.com/v1beta/{{ $json.name }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{ $('1. Config and API Keys').first().json.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e5f6a7b8-1010-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "Veo (Check Status)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2060, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Saare Veo operations check karo — sab done hone tak pending batao\nconst ops = $input.all();\n\nconst failed = ops.find((o) => o.json.error);\nif (failed) {\n  const msg = (failed.json.error && failed.json.error.message) || JSON.stringify(failed.json.error);\n  throw new Error('Veo render fail hua: ' + msg);\n}\n\nconst pending = ops.filter((o) => !o.json.done).length;\nif (pending > 0) {\n  return [{ json: { all_done: false, pending } }];\n}\n\nconst scenes = $('Split Scenes').all().map((s, i) => {\n  const resp = ops[i].json.response || {};\n  const gvr = resp.generateVideoResponse || {};\n  const samples = gvr.generatedSamples || [];\n  return {\n    scene_index: s.json.scene_index,\n    hook: s.json.hook,\n    captions: s.json.captions,\n    voiceover: s.json.voiceover,\n    video_uri: samples[0] && samples[0].video ? samples[0].video.uri : null,\n  };\n});\n\nif (scenes.some((s) => !s.video_uri)) {\n  throw new Error('Veo ne video URI nahi diya (safety filter block ho sakta hai) — topic/prompt thoda change karke try karo');\n}\n\nreturn [{ json: { all_done: true, scenes } }];"
+      },
+      "id": "e5f6a7b8-1011-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "Veo Collector",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2280, 340]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-veo-done",
+              "leftValue": "={{ $json.all_done }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e5f6a7b8-1012-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "Veo Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2500, 340]
+    },
+    {
+      "parameters": {
+        "amount": 45,
+        "unit": "seconds"
+      },
+      "id": "e5f6a7b8-1013-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "Wait 45s (Veo)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [2500, 560]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $('Veo Collector').first().json.scenes.map((s) => ({ json: s }));"
+      },
+      "id": "e5f6a7b8-1014-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "Split for Download",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2720, 340]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.video_uri }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{ $('1. Config and API Keys').first().json.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "e5f6a7b8-1015-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "6. Download Veo Clip",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2940, 340]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://tmpfiles.org/api/v1/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e5f6a7b8-1016-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "7. Host Veo Clip (tmpfiles.org)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3160, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Scene data + hosted URLs ek jagah collect karo\nconst scenes = $('Veo Collector').first().json.scenes;\nconst clips = $('7. Host Veo Clip (tmpfiles.org)').all();\nconst voiceovers = $('4. Host Voiceover (tmpfiles.org)').all();\nconst first = $('Split Scenes').first().json;\n\nconst dl = (u) => u.replace('tmpfiles.org/', 'tmpfiles.org/dl/');\n\nreturn [{\n  json: {\n    meta: first.meta,\n    outro_prompt: first.outro_prompt,\n    scenes: scenes.map((s, i) => ({\n      scene_index: s.scene_index,\n      hook: s.hook,\n      captions: s.captions,\n      clip_url: dl(clips[i].json.data.url),\n      audio_url: dl(voiceovers[i].json.data.url),\n    })),\n  },\n}];"
+      },
+      "id": "e5f6a7b8-1017-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "Assets Ready",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3380, 340]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image:generateContent",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $('1. Config and API Keys').first().json.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: 'YouTube Shorts outro background image, vertical 9:16. ' + $('Assets Ready').first().json.outro_prompt + ' Bold vibrant cinematic colors, dramatic lighting, completely empty space in the center for text overlay. Strictly no text, no words, no letters, no logos.' }] }], generationConfig: { responseModalities: ['TEXT', 'IMAGE'], imageConfig: { aspectRatio: '9:16' } } }) }}",
+        "options": {}
+      },
+      "id": "e5f6a7b8-1018-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "8. Nano Banana Pro (Outro Image)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3600, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "const parts = $input.first().json.candidates[0].content.parts;\nconst img = parts.find((p) => p.inlineData && (p.inlineData.mimeType || '').startsWith('image/'));\nif (!img) {\n  throw new Error('Nano Banana Pro ne image nahi bheji — prompt simplify karke dobara run karo');\n}\nreturn [{\n  json: {},\n  binary: {\n    data: {\n      data: img.inlineData.data,\n      mimeType: img.inlineData.mimeType,\n      fileName: 'outro.png',\n    },\n  },\n}];"
+      },
+      "id": "e5f6a7b8-1019-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "Outro Image to Binary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3820, 340]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://tmpfiles.org/api/v1/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e5f6a7b8-1020-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "9. Host Outro Image (tmpfiles.org)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4040, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Final movie JSON: Veo footage + Google TTS voiceover + hook + karaoke captions + branded outro\nconst assets = $('Assets Ready').first().json;\nconst cfg = $('1. Config and API Keys').first().json;\nconst outroUrl = $input.first().json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');\n\nconst scenes = assets.scenes.map((s, i) => {\n  const elements = [\n    // Veo clip (mute — voiceover upar baithega)\n    { type: 'video', src: s.clip_url, volume: 0 },\n    // Gemini Pro TTS voiceover\n    { type: 'audio', src: s.audio_url },\n    // Golden hook caption (upar)\n    { type: 'text', text: s.hook, position: 'top-center', 'font-size': 64, color: '#FFD700' },\n  ];\n  // Word-by-word karaoke captions (neeche, staggered)\n  (s.captions || []).slice(0, 3).forEach((line, c) => {\n    elements.push({\n      type: 'text',\n      text: line,\n      position: 'bottom-center',\n      'font-size': 72,\n      color: '#FFFFFF',\n      start: 0.4 + c * 2.6,\n      duration: 2.6,\n    });\n  });\n  const scene = { comment: 'Scene ' + (i + 1), duration: 8, elements };\n  if (i > 0) scene.transition = { style: 'fade', duration: 0.5 };\n  return scene;\n});\n\n// Branded outro (Nano Banana Pro image + follow CTA)\nscenes.push({\n  comment: 'Outro',\n  duration: 3,\n  elements: [\n    { type: 'image', src: outroUrl, duration: 3 },\n    { type: 'text', text: 'FOLLOW ' + (cfg.CHANNEL_TAG || ''), position: 'center', 'font-size': 84, color: '#FFFFFF' },\n  ],\n  transition: { style: 'fade', duration: 0.5 },\n});\n\nconst movie = {\n  comment: 'Professional AI Short — Gemini Pro + Veo + Nano Banana Pro',\n  resolution: 'instagram-story',\n  quality: 'high',\n  scenes,\n};\n\nreturn [{ json: { movie, meta: assets.meta } }];"
+      },
+      "id": "e5f6a7b8-1021-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "Build Movie JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4260, 340]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.json2video.com/v2/movies",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $('1. Config and API Keys').first().json.JSON2VIDEO_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.movie) }}",
+        "options": {}
+      },
+      "id": "e5f6a7b8-1022-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "10. JSON2Video (Final Render)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4480, 340]
+    },
+    {
+      "parameters": {
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "id": "e5f6a7b8-1023-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "Wait 30s (Render)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [4700, 340]
+    },
+    {
+      "parameters": {
+        "url": "https://api.json2video.com/v2/movies",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "project",
+              "value": "={{ $('10. JSON2Video (Final Render)').first().json.project }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $('1. Config and API Keys').first().json.JSON2VIDEO_API_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e5f6a7b8-1024-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "Check Render Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4920, 340]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "or",
+          "conditions": [
+            {
+              "id": "cond-render-done",
+              "leftValue": "={{ $json.movie.status }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "cond-render-error",
+              "leftValue": "={{ $json.movie.status }}",
+              "rightValue": "error",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e5f6a7b8-1025-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "Render Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [5140, 340]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.movie.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "e5f6a7b8-1026-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "11. Download Final Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [5360, 340]
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $('Build Movie JSON').first().json.meta.title }}",
+        "categoryId": "27",
+        "binaryProperty": "data",
+        "options": {
+          "description": "={{ $('Build Movie JSON').first().json.meta.description }}",
+          "privacyStatus": "private",
+          "tags": "={{ $('Build Movie JSON').first().json.meta.tags }}"
+        }
+      },
+      "id": "e5f6a7b8-1027-4c5d-9e0f-1a2b3c4d5e6a",
+      "name": "12. Upload to YouTube",
+      "type": "n8n-nodes-base.youtube",
+      "typeVersion": 1,
+      "position": [5580, 340]
+    }
+  ],
+  "connections": {
+    "Start Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "1. Config and API Keys",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Config and API Keys": {
+      "main": [
+        [
+          {
+            "node": "2. Gemini Pro (Script and Plan)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Gemini Pro (Script and Plan)": {
+      "main": [
+        [
+          {
+            "node": "Split Scenes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Scenes": {
+      "main": [
+        [
+          {
+            "node": "3. Gemini Pro TTS (Voiceover)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Gemini Pro TTS (Voiceover)": {
+      "main": [
+        [
+          {
+            "node": "Voiceover to WAV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Voiceover to WAV": {
+      "main": [
+        [
+          {
+            "node": "4. Host Voiceover (tmpfiles.org)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Host Voiceover (tmpfiles.org)": {
+      "main": [
+        [
+          {
+            "node": "5. Veo (Submit Scenes)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Veo (Submit Scenes)": {
+      "main": [
+        [
+          {
+            "node": "Wait 60s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 60s": {
+      "main": [
+        [
+          {
+            "node": "Veo (Check Status)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Veo (Check Status)": {
+      "main": [
+        [
+          {
+            "node": "Veo Collector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Veo Collector": {
+      "main": [
+        [
+          {
+            "node": "Veo Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Veo Done?": {
+      "main": [
+        [
+          {
+            "node": "Split for Download",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 45s (Veo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 45s (Veo)": {
+      "main": [
+        [
+          {
+            "node": "Veo (Check Status)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split for Download": {
+      "main": [
+        [
+          {
+            "node": "6. Download Veo Clip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6. Download Veo Clip": {
+      "main": [
+        [
+          {
+            "node": "7. Host Veo Clip (tmpfiles.org)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7. Host Veo Clip (tmpfiles.org)": {
+      "main": [
+        [
+          {
+            "node": "Assets Ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assets Ready": {
+      "main": [
+        [
+          {
+            "node": "8. Nano Banana Pro (Outro Image)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "8. Nano Banana Pro (Outro Image)": {
+      "main": [
+        [
+          {
+            "node": "Outro Image to Binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Outro Image to Binary": {
+      "main": [
+        [
+          {
+            "node": "9. Host Outro Image (tmpfiles.org)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "9. Host Outro Image (tmpfiles.org)": {
+      "main": [
+        [
+          {
+            "node": "Build Movie JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Movie JSON": {
+      "main": [
+        [
+          {
+            "node": "10. JSON2Video (Final Render)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10. JSON2Video (Final Render)": {
+      "main": [
+        [
+          {
+            "node": "Wait 30s (Render)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 30s (Render)": {
+      "main": [
+        [
+          {
+            "node": "Check Render Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Render Status": {
+      "main": [
+        [
+          {
+            "node": "Render Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render Done?": {
+      "main": [
+        [
+          {
+            "node": "11. Download Final Video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 30s (Render)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11. Download Final Video": {
+      "main": [
+        [
+          {
+            "node": "12. Upload to YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}
