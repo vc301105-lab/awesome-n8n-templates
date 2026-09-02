@@ -1,0 +1,348 @@
+{
+  "name": "End-to-End AI YouTube Video Generator",
+  "tags": [],
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## ⚙️ Setup — do this first\n\n1. Open **1. Config and API Keys** and replace the `YOUR_*` placeholders:\n   - **GEMINI_API_KEY** → create one in Google AI Studio\n   - **ELEVENLABS_API_KEY** → from your ElevenLabs account\n   - **ELEVENLABS_VOICE_ID** → any voice ID (default is Rachel)\n   - **CREATOMATE_API_KEY** + **CREATOMATE_TEMPLATE_ID** → from your Creatomate project\n2. In your Creatomate template, name the caption element **Text** and the voiceover element **Audio**. If your element names differ, edit the body of **5. Creatomate (Render Video)** to match them.\n3. Attach your **YouTube OAuth2 API** credential to **7. Upload to YouTube**.\n\nThe voiceover MP3 is uploaded to tmpfiles.org so Creatomate can download it (files auto-delete after ~60 minutes). Swap that node for any public file host you prefer.\n\nVideos are uploaded as **private** by default. If your renders take longer than ~45 seconds, increase the **Wait for Video Render** node."
+      },
+      "id": "a1f0b2c3-1111-4a2b-9c3d-0f1e2d3c4b5a",
+      "name": "Sticky Note — Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-80, -240]
+    },
+    {
+      "parameters": {
+        "content": "## 🎬 What it does\n\nOne topic in → one finished Short out:\n\n1. **Gemini** writes the title, description, tags, an on-screen hook and a 40–50 word Hindi/Hinglish voiceover script\n2. **ElevenLabs** turns the script into an MP3 voiceover\n3. **tmpfiles.org** hosts the MP3 at a temporary public URL\n4. **Creatomate** renders the video template with the hook text and the voiceover\n5. n8n waits ~45 s, downloads the finished MP4 and uploads it to YouTube as **private**\n\n💡 To generate voiceovers in another language, edit the prompt in **2. Gemini (Script and Metadata)**."
+      },
+      "id": "a1f0b2c3-2222-4a2b-9c3d-0f1e2d3c4b5a",
+      "name": "Sticky Note — Flow",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [660, -240]
+    },
+    {
+      "parameters": {},
+      "id": "b1e2d3f4-0001-4c5a-9b8c-1a2b3c4d5e6f",
+      "name": "Start Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "k1",
+              "name": "GEMINI_API_KEY",
+              "value": "YOUR_GEMINI_API_KEY",
+              "type": "string"
+            },
+            {
+              "id": "k2",
+              "name": "ELEVENLABS_API_KEY",
+              "value": "YOUR_ELEVENLABS_API_KEY",
+              "type": "string"
+            },
+            {
+              "id": "k3",
+              "name": "ELEVENLABS_VOICE_ID",
+              "value": "21m00Tcm4TlvDq8ikWAM",
+              "type": "string"
+            },
+            {
+              "id": "k4",
+              "name": "CREATOMATE_API_KEY",
+              "value": "YOUR_CREATOMATE_API_KEY",
+              "type": "string"
+            },
+            {
+              "id": "k5",
+              "name": "CREATOMATE_TEMPLATE_ID",
+              "value": "YOUR_CREATOMATE_TEMPLATE_ID",
+              "type": "string"
+            },
+            {
+              "id": "k6",
+              "name": "TOPIC",
+              "value": "Top 3 Unbelievable Facts About Ancient India",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b1e2d3f4-0002-4c5a-9b8c-1a2b3c4d5e6f",
+      "name": "1. Config and API Keys",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $json.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: 'Act as an expert YouTube Shorts creator. Topic: ' + $json.TOPIC + '. Return strictly a valid JSON object with: \"title\" (under 90 chars), \"description\" (with 5 hashtags), \"tags\" (comma separated), \"hook_text\" (short 5-8 word caption for screen), and \"voiceover\" (exact 40-50 word Hindi/Hinglish voiceover script).' }] }], generationConfig: { responseMimeType: 'application/json' } }) }}",
+        "options": {}
+      },
+      "id": "b1e2d3f4-0003-4c5a-9b8c-1a2b3c4d5e6f",
+      "name": "2. Gemini (Script and Metadata)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [520, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Clean and parse the JSON returned by Gemini\nconst raw = $input.first().json.candidates[0].content.parts[0].text;\nconst cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();\nconst parsed = JSON.parse(cleaned);\nconst cfg = $('1. Config and API Keys').first().json;\n\nreturn [\n  {\n    json: {\n      ...parsed,\n      elevenlabs_key: cfg.ELEVENLABS_API_KEY,\n      elevenlabs_voice_id: cfg.ELEVENLABS_VOICE_ID,\n      creatomate_key: cfg.CREATOMATE_API_KEY,\n      template_id: cfg.CREATOMATE_TEMPLATE_ID,\n    },\n  },\n];"
+      },
+      "id": "b1e2d3f4-0004-4c5a-9b8c-1a2b3c4d5e6f",
+      "name": "Parse Gemini Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [740, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.elevenlabs.io/v1/text-to-speech/{{ $('Parse Gemini Output').first().json.elevenlabs_voice_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "xi-api-key",
+              "value": "={{ $('Parse Gemini Output').first().json.elevenlabs_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $('Parse Gemini Output').first().json.voiceover, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.5, similarity_boost: 0.8 } }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "b1e2d3f4-0005-4c5a-9b8c-1a2b3c4d5e6f",
+      "name": "3. ElevenLabs (Voiceover Audio)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://tmpfiles.org/api/v1/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b1e2d3f4-0006-4c5a-9b8c-1a2b3c4d5e6f",
+      "name": "4. Host Voiceover Audio (tmpfiles.org)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1180, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.creatomate.com/v1/renders",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Parse Gemini Output').first().json.creatomate_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ template_id: $('Parse Gemini Output').first().json.template_id, modifications: { 'Text': $('Parse Gemini Output').first().json.hook_text, 'Audio': $('4. Host Voiceover Audio (tmpfiles.org)').first().json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/') } } }) }}",
+        "options": {}
+      },
+      "id": "b1e2d3f4-0007-4c5a-9b8c-1a2b3c4d5e6f",
+      "name": "5. Creatomate (Render Video)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1400, 300]
+    },
+    {
+      "parameters": {
+        "amount": 45,
+        "unit": "seconds"
+      },
+      "id": "b1e2d3f4-0008-4c5a-9b8c-1a2b3c4d5e6f",
+      "name": "Wait for Video Render",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1620, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('5. Creatomate (Render Video)').first().json[0].url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "b1e2d3f4-0009-4c5a-9b8c-1a2b3c4d5e6f",
+      "name": "6. Download Rendered Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1840, 300]
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $('Parse Gemini Output').first().json.title }}",
+        "categoryId": "27",
+        "binaryProperty": "data",
+        "options": {
+          "description": "={{ $('Parse Gemini Output').first().json.description }}",
+          "privacyStatus": "private",
+          "tags": "={{ $('Parse Gemini Output').first().json.tags }}"
+        }
+      },
+      "id": "b1e2d3f4-0010-4c5a-9b8c-1a2b3c4d5e6f",
+      "name": "7. Upload to YouTube",
+      "type": "n8n-nodes-base.youtube",
+      "typeVersion": 1,
+      "position": [2060, 300]
+    }
+  ],
+  "connections": {
+    "Start Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "1. Config and API Keys",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Config and API Keys": {
+      "main": [
+        [
+          {
+            "node": "2. Gemini (Script and Metadata)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Gemini (Script and Metadata)": {
+      "main": [
+        [
+          {
+            "node": "Parse Gemini Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Gemini Output": {
+      "main": [
+        [
+          {
+            "node": "3. ElevenLabs (Voiceover Audio)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. ElevenLabs (Voiceover Audio)": {
+      "main": [
+        [
+          {
+            "node": "4. Host Voiceover Audio (tmpfiles.org)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Host Voiceover Audio (tmpfiles.org)": {
+      "main": [
+        [
+          {
+            "node": "5. Creatomate (Render Video)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Creatomate (Render Video)": {
+      "main": [
+        [
+          {
+            "node": "Wait for Video Render",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Video Render": {
+      "main": [
+        [
+          {
+            "node": "6. Download Rendered Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6. Download Rendered Video": {
+      "main": [
+        [
+          {
+            "node": "7. Upload to YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}
